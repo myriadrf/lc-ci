@@ -130,11 +130,22 @@
   tags:
     - modem
 
+- name: setup ELL repository (ofono build dep)
+  git:
+    repo: 'https://git.kernel.org/pub/scm/libs/ell/ell'
+    dest: /root/ell
+    version: 0.27
+    clone: yes
+    update: no
+  tags:
+    - ofono
+    - modem
+
 - name: setup ofono repository
   git:
-    repo: 'https://gitea.sysmocom.de/sysmocom/ofono'
+    repo: 'https://github.com/myriadrf/ofono'
     dest: /root/ofono
-    version: osmo-gsm-tester
+    version: lc/main
     clone: yes
     update: no
   tags:
