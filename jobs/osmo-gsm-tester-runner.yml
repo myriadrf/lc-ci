@@ -3,28 +3,8 @@
     name: osmo-gsm-testers-runner
     stage:
       - prod
-      - rnd
     jobs:
       - 'osmo-gsm-tester_run-{stage}'
-      - 'osmo-gsm-tester_gerrit'
-      - 'osmo-gsm-tester_ttcn3'
-      - 'osmo-gsm-tester_virtual'
-
-- scm:
-    name: osmo-gsm-tester-gerrit
-    scm:
-      - git:
-          url: ssh://jenkins@gerrit.osmocom.org:29418/osmo-gsm-tester
-          credentials-id: d5eda5e9-b59d-44ba-88d2-43473cb6e42d
-          branches:
-            - $GERRIT_BRANCH
-          refspec: $GERRIT_REFSPEC
-          wipe-workspace: false
-          skip-tag: true
-          basedir: osmo-gsm-tester
-          clean:
-            before: true
-          choosing-strategy: 'gerrit'
 
 # The repo must be used seperate to workaround the bug "Can not expand OSMO_GSM_TESTER_BRANCH".
 # The safe-guard check to not use un-defined variables seems to be broken.
@@ -32,69 +12,17 @@
     name: osmo-gsm-tester-repo
     scm:
       - git:
-          url: https://gitea.osmocom.org/cellular-infrastructure/osmo-gsm-tester
+          url: https://github.com/myriadrf/osmo-gsm-tester
           branches:
             - ${OSMO_GSM_TESTER_BRANCH}
           wipe-workspace: false
           skip-tag: true
           basedir: osmo-gsm-tester
 
-- builder:
-    name: copy_artifact
-    builders:
-      - copyartifact:
-          project: '{repo}'
-          filter: '*.tgz, *.md5'
-          which-build: last-successful
-          stable: true
-
-# all artifact in one place
-- builder:
-    name: copy_artifact_all
-    builders:
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmo-bsc
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmo-bts
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmo-ggsn
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmo-hlr
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmo-mgw
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmo-hnbgw
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmo-msc
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmo-pcu
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmo-sgsn
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmo-trx
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmo-nitb
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmo-stp
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmocom-bb
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmo-bts-sysmo
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmo-pcu-sysmo
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmo-bts-oc2g
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmo-pcu-oc2g
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-open5gs
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-srslte
-
 - defaults:
     name: runner
     description: 'Run an actual GSM hardware test using the binaries from the osmo-gsm-tester_build* jobs'
-    node: 'osmo-gsm-tester-prod'
+    node: 'osmo-gsm-tester-1'
     project-type: freestyle
     properties:
       - build-discarder:
@@ -102,40 +30,38 @@
     parameters:
       - string:
           name: "OSMO_GSM_TESTER_BRANCH"
-          default: "origin/master"
+          default: "origin/lc/main"
           description: "Which branch/sha should be used for testing"
       - string:
           name: "OSMO_GSM_TESTER_OPTS"
           default: ""
           description: "pass additional command line options to osmo-gsm-tester.py, e.g. to select specific suites:scenarios. Default: leave empty."
+      - string:
+          name: "repo"
+          default: "osmo-gsm-tester_build-srslte"
+          description: "project which build artifacts should be copied from"
+      - string:
+          name: "OSMO_GSM_TESTER_CONF"
+          default: "/home/jenkins/workspace/osmo-gsm-tester_run-prod/osmo-gsm-tester/doc/examples/4g_srsLTE/main.conf"
+          description: "Configuration file for osmo-gsm-tester.py"
 
 - job-template:
     name: 'osmo-gsm-tester_run-{stage}'
     defaults: runner
-    node: 'osmo-gsm-tester-{stage}'
+    #node: 'osmo-gsm-tester-{stage}'
+    node: 'osmo-gsm-tester-1'
     triggers:
-      - timed: "H 0 * * *"
+      #- timed: "H 0 * * *"
       - reverse:
             jobs:
-                - osmo-gsm-tester_build-osmo-bsc
-                - osmo-gsm-tester_build-osmo-bts
-                - osmo-gsm-tester_build-osmo-ggsn
-                - osmo-gsm-tester_build-osmo-hlr
-                - osmo-gsm-tester_build-osmo-mgw
-                - osmo-gsm-tester_build-osmo-msc
-                - osmo-gsm-tester_build-osmo-pcu
-                - osmo-gsm-tester_build-osmo-sgsn
-                - osmo-gsm-tester_build-osmo-trx
-                - osmo-gsm-tester_build-osmo-nitb
-                - osmo-gsm-tester_build-osmo-stp
-                - osmo-gsm-tester_build-osmo-bts-sysmo
-                - osmo-gsm-tester_build-osmo-pcu-sysmo
-                - osmo-gsm-tester_build-osmo-bts-oc2g
-                - osmo-gsm-tester_build-osmo-pcu-oc2g
-                - osmo-gsm-tester_build-open5gs
                 - osmo-gsm-tester_build-srslte
     builders:
-      - copy_artifact_all
+      - copyartifact:
+          #project: '{repo}'
+          project: 'osmo-gsm-tester_build-srslte'
+          filter: "*.tgz, *.md5"
+          which-build: last-successful
+          stable: true
       - shell: !include-raw: osmo-gsm-tester_run-{stage}.sh
     publishers:
       - archive:
@@ -144,119 +70,6 @@
       - junit:
           results: 'trial-*/last_run/trial-*.xml'
           allow-empty-results: true
-      - email:
-          recipients: 'pespin@sysmocom.de'
-          notify-every-unstable-build: true
     scm:
       - 'osmo-gsm-tester-repo'
 
-# gerrit job
-- job:
-    name: 'osmo-gsm-tester_gerrit'
-    defaults: runner
-    scm:
-      - 'osmo-gsm-tester-gerrit'
-    triggers:
-      - gerrit:
-          server-name: 'gerrit.osmocom.org'
-          trigger-on:
-            - patchset-created-event:
-                exclude-no-code-change: true
-            - draft-published-event
-          projects:
-            - project-compare-type: 'PLAIN'
-              project-pattern: 'osmo-gsm-tester'
-              branches:
-                - branch-compare-type: 'ANT'
-                  branch-pattern: '**'
-    builders:
-      - shell: |
-          # make sure no bin artifacts from a previous run remain
-          rm -f *.tgz *.md5
-      - copy_artifact_all
-      - shell: !include-raw: osmo-gsm-tester_run-gerrit.sh
-    publishers:
-      - archive:
-          artifacts: '*-run.tgz, *-bin.tgz'
-          default-excludes: false
-      - junit:
-          results: 'trial-*/last_run/trial-*.xml'
-          allow-empty-results: true
-
-# ttcn3 job
-- job:
-    name: 'osmo-gsm-tester_ttcn3'
-    defaults: runner
-    scm:
-      - 'osmo-gsm-tester-repo'
-    triggers:
-      - timed: "H 23 * * *"
-    builders:
-      - shell: |
-          # make sure no bin artifacts from a previous run remain
-          rm -f *.tgz *.md5
-      - copy_artifact_all
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmocom-bb
-      - shell: !include-raw: osmo-gsm-tester_ttcn3.sh
-    publishers:
-      - archive:
-          artifacts: '*-run.tgz, *-bin.tgz'
-          default-excludes: false
-      - junit:
-          results: 'trial-*/last_run/trial-*.xml'
-          allow-empty-results: true
-
-# virtual tester job
-- job:
-    name: 'osmo-gsm-tester_virtual'
-    defaults: runner
-    node: 'osmocom-master-debian9'
-    scm:
-      - 'osmo-gsm-tester-repo'
-    triggers:
-      - timed: "H 22 * * *"
-    builders:
-      - shell: |
-          # make sure no bin artifacts from a previous run remain
-          rm -f *.tgz *.md5
-      - copy_artifact_all
-      - copy_artifact:
-         repo: osmo-gsm-tester_build-osmocom-bb
-      - shell: >
-            unlink osmo-gsm-tester/sysmocom/resources.conf || true
-
-            ln -s resources.conf.virtual osmo-gsm-tester/sysmocom/resources.conf
-
-            # TODO: We (want to) grant CAP_SYS_NICE for osmo-bts-virtual
-            # but with newer cgroup support and the --cpu-rt-runtime/--ulimit
-            # rtprio=99 flags we can limit the damage a job can do.
-
-            docker run --rm=true \
-              -e HOME=/build \
-              -e JOB_NAME="$JOB_NAME" \
-              -e OSMO_GSM_TESTER_CONF="/build/osmo-gsm-tester/sysmocom/main.conf" \
-              -e OSMO_GSM_TESTER_OPTS="$OSMO_GSM_TESTER_OPTS" \
-              -e BUILD_NUMBER="$BUILD_NUMBER" \
-              -w /build -i \
-              -v "$PWD:/build" \
-              -v "$HOME/.ssh:/home/build/.ssh:ro" \
-              --cap-add=sys_nice \
-              $USER/osmo-gsm-tester \
-              /bin/bash -c 'LANG="en_US.utf8" LC_ALL="en_US.UTF-8" LC_LANG="en_US.UTF-8" PATH="$PWD/osmo-gsm-tester/src:${PATH}" ./osmo-gsm-tester/contrib/jenkins-run.sh'
-    publishers:
-      - archive:
-          artifacts: '*-run.tgz, *-bin.tgz'
-          default-excludes: false
-      - junit:
-          results: 'trial-*/last_run/trial-*.xml'
-          allow-empty-results: true
-    parameters:
-      - string:
-          name: "OSMO_GSM_TESTER_OPTS"
-          default: "-s netreg_mass"
-          description: "pass additional command line options to osmo-gsm-tester.py, e.g. to select specific suites:scenarios. Default: leave empty."
-      - string:
-          name: "OSMO_GSM_TESTER_BRANCH"
-          default: "origin/master"
-          description: "Which branch/sha should be used for testing"

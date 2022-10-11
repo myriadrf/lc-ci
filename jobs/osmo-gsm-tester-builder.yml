@@ -6,43 +6,11 @@
     name: osmo-gsm-tester-builder
 
     repo:
-      - osmo-bsc
-      - osmo-bts
-      - osmo-ggsn
-      - osmo-hlr
-      - osmo-mgw
-      - osmo-hnbgw
-      - osmo-msc
-      - osmo-pcu
-      - osmo-sgsn
-      - osmo-trx
-      - osmocom-bb
-      - osmo-nitb:
-          triggered-by: master-openbsc
-      - osmo-stp:
-          triggered-by: master-libosmo-sccp
-      - osmo-bts-sysmo:
-          triggered-by: master-osmo-bts
-      - osmo-pcu-sysmo:
-          triggered-by: master-osmo-pcu
-      - osmo-bts-oc2g:
-          triggered-by: master-osmo-bts
-      - osmo-pcu-oc2g:
-          triggered-by: master-osmo-pcu
-      - open5gs
       - srslte
     triggered-by: 'master-{repo}'
 
     jobs:
       - 'osmo-gsm-tester_build-{repo}'
-
-- parameter:
-    name: add_param_build_branch
-    parameters:
-      - string:
-          name: "{name}"
-          default: ""
-          description: "Default: leave empty. Branch to build from, in the form my/branch or origin/my/branch (do not prepend 'refs/heads/')"
 
 - job-template:
     name: 'osmo-gsm-tester_build-{repo}'
@@ -60,53 +28,35 @@
           artifacts: '*.tgz, *.md5'
           only-if-success: 'true'
           default-excludes: false
-      - email:
-          recipients: pespin@sysmocom.de jenkins-notifications@lists.osmocom.org
-          notify-every-unstable-build: true
     properties:
       - build-discarder:
           num-to-keep: 20
     parameters:
       - string:
           name: "OSMO_GSM_TESTER_BRANCH"
-          default: "origin/master"
-          description: "Which branch/sha should be used for testing"
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_libosmo-abis
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_libosmocore
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_libosmo-netif
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_libosmo_sccp
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_octphy_2g_headers
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_osmo_bts
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_osmo_mgw
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_osmo_bsc
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_libasn1c
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_osmo_iuh
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_osmo_hnbgw
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_osmo_msc
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_osmo_hlr
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_osmo_pcu
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_osmo_trx
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_osmocom_bb
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_open5gs
-      - add_param_build_branch:
-         name: OSMO_GSM_TESTER_BUILD_srslte
+          default: "origin/lc/main"
+          description: "Which Osmo-GSM-Tester branch/sha should be used for testing"
+      - string:
+          name: "trial_binaries"
+          default: "srsepc srsenb srsepc_if_masq.sh srsran_install_configs.sh"
+          description: "srsRAN Trial binaries to be built, defaults to srsepc srsenb"
+      - string:
+          name: "src_git_url"
+          default: "https://github.com/myriadrf"
+          description: "srsRAN Git repository URL, defaults to myriadRF"
+      - string:
+          name: "configure_opts"
+          default: "-DUSE_LTE_RATES=true"
+          description: "Build options, default to using LTE rates"
+      - string:
+          name: "OSMO_GSM_TESTER_BUILD_srsRAN"
+          default: "native_lime_22.04"
+          description: "srsRAN branch, defaults to native_lime_22.04"
+      - string:
+          name: "project_name"
+          default: "srsRAN"
+          description: "Project name override, leave as-is for now"
+
     scm:
       - osmo-gsm-tester-repo
 
@@ -116,7 +66,7 @@
     name: osmo-gsm-tester-repo
     scm:
       - git:
-          url: https://gerrit.osmocom.org/osmo-gsm-tester
+          url: https://github.com/myriadrf/osmo-gsm-tester
           branches:
             - ${OSMO_GSM_TESTER_BRANCH}
           wipe-workspace: false
